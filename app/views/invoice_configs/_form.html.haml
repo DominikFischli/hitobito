@@ -6,4 +6,7 @@
 = standard_form(entry, url: [parent, :invoice_config]) do |f|
   = f.error_messages
   = f.labeled_input_field :payment_information
+  = f.labeled_input_field :address
+  = f.labeled_input_field :iban
+  = f.labeled_input_field :account_number
   = save_form_buttons(f, nil, group_invoice_config_path(parent))

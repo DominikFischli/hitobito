@@ -80,6 +80,16 @@ describe Invoice do
     end.not_to change { [group.invoices.count, group.invoice_items.count] }
   end
 
+  it '#multi_create copies information from invoice_config' do
+    invoice = Invoice.new(title: 'invoice', group: group)
+    invoice.multi_create([person, other_person])
+    invoice = Invoice.find_by(title: 'invoice')
+
+    expect(invoice.address).to eq(invoice.invoice_config.address)
+    expect(invoice.iban).to eq(invoice.invoice_config.iban)
+    expect(invoice.account_number).to eq(invoice.invoice_config.account_number)
+  end
+
   it '#to_s returns total amount' do
     invoice = invoices(:invoice)
     expect(invoice.to_s).to eq "Invoice(#{invoice.sequence_number}): 2.0"

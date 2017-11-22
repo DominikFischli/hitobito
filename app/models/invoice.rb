@@ -64,7 +64,7 @@ class Invoice < ActiveRecord::Base
   def multi_create
     Invoice.transaction do
       all_saved = recipients.all? do |recipient|
-        invoice = self.class.new(attributes.merge(recipient_id: recipient.id))
+        invoice = self.class.new(build_attributes(person))
         invoice_items.each do |invoice_item|
           invoice.invoice_items.build(invoice_item.attributes)
         end
@@ -101,6 +101,10 @@ class Invoice < ActiveRecord::Base
     Person.where(id: recipient_ids.to_s.split(','))
   end
 
+  def invoice_config
+    group.invoice_config
+  end
+
   private
 
   def set_self_in_nested
@@ -133,15 +137,18 @@ class Invoice < ActiveRecord::Base
     invoice_config.increment!(:sequence_number)
   end
 
-  def invoice_config
-    group.invoice_config
-  end
-
   def build_recipient_address
     [recipient.full_name,
      recipient.address,
      [recipient.zip_code, recipient.town].compact.join(' / '),
      recipient.country].compact.join("\n")
+  end
+
+  def build_attributes(person)
+    attributes.merge(recipient: person,
+                     address: invoice_config.address,
+                     iban: invoice_config.iban,
+                     account_number: invoice_config.account_number)
   end
 
 end
