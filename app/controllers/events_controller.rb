@@ -6,6 +6,8 @@
 #  https://github.com/hitobito/hitobito.
 
 class EventsController < CrudController # rubocop:todo Metrics/ClassLength
+  include ContactParams
+
   include YearBasedPaging
   include AsyncDownload
   include Api::JsonPaging
@@ -280,35 +282,6 @@ class EventsController < CrudController # rubocop:todo Metrics/ClassLength
       q.question_translations = template.question_translations
       q.choices_translations = template.choices_translations
     end
-  end
-
-  def assign_contact_attrs
-    contact_attrs = model_params.delete(:contact_attrs)
-    return if contact_attrs.blank?
-
-    reset_contact_attrs
-    contact_attrs.each do |a, v|
-      entry.required_contact_attrs << a if v.to_sym == :required
-      entry.hidden_contact_attrs << a if v.to_sym == :hidden
-    end
-  end
-
-  def assign_visible_contact_attrs
-    contact_attrs = model_params.delete(:visible_contact_attributes).presence
-
-    entry.visible_contact_attributes =
-      case contact_attrs
-      when Hash, ActionController::Parameters then contact_attrs.keys
-      when Array then contact_attrs
-      when nil then []
-      else
-        raise "Unexpected Type for visible_contact_attributes: #{contact_attrs.class}"
-      end
-  end
-
-  def reset_contact_attrs
-    entry.required_contact_attrs = []
-    entry.hidden_contact_attrs = []
   end
 
   def event_filter
