@@ -74,18 +74,10 @@ class Event < ActiveRecord::Base # rubocop:disable Metrics/ClassLength:
   require_dependency "event/role_decorator"
   require_dependency "event/role_ability"
 
-  ALLOWED_VISIBLE_CONTACT_ATTRIBUTES = %w[
-    name
-    address
-    phone_number
-    email
-    social_account
-  ].freeze
-
   SEARCHABLE_ATTRS = [:number, {event_translations: [:name], groups: [:name]}]
 
   include Event::Participatable
-  include Event::ContactAttrs
+  include ContactAttrs
   include FullTextSearchable
   include Globalized
   translates :application_conditions, :description, :name, :signature_confirmation_text
@@ -190,9 +182,6 @@ class Event < ActiveRecord::Base # rubocop:disable Metrics/ClassLength:
   validates :guest_limit, numericality: {only_integer: true, greater_than_or_equal_to: 0}
   validate :assert_type_is_allowed_for_groups
   validate :assert_application_closing_is_after_opening
-  validate :assert_required_contact_attrs_valid
-  validate :assert_hidden_contact_attrs_valid
-  validate :validate_visible_contact_attributes
   validates_associated :application_questions, :admin_questions
 
   ### CALLBACKS
@@ -504,48 +493,6 @@ class Event < ActiveRecord::Base # rubocop:disable Metrics/ClassLength:
     # don't try to set self in frozen nested attributes (-> marked for destroy)
     (dates + application_questions + admin_questions).each do |e|
       e.event = self unless e.frozen?
-    end
-  end
-
-  def valid_contact_attr?(attr)
-    (
-      Event.possible_contact_attrs +
-      Event.possible_contact_associations
-    ).map(&:to_s).include?(attr.to_s)
-  end
-
-  def assert_required_contact_attrs_valid # rubocop:disable Metrics/CyclomaticComplexity
-    required_contact_attrs.map(&:to_s).each do |a|
-      unless valid_contact_attr?(a) &&
-          Event.possible_contact_associations
-              .map(&:to_s).exclude?(a)
-        errors.add(:base, :contact_attr_invalid, attribute: a)
-      end
-
-      if hidden_contact_attrs.include?(a)
-        errors.add(:base, :contact_attr_hidden_required, attribute: a)
-      end
-    end
-  end
-
-  def assert_hidden_contact_attrs_valid
-    hidden_contact_attrs.map(&:to_sym).each do |a|
-      unless valid_contact_attr?(a)
-        errors.add(:base, :contact_attr_invalid, attribute: a)
-      end
-      if Event.mandatory_contact_attrs.include?(a)
-        errors.add(:base, :contact_attr_mandatory, attribute: a)
-      end
-    end
-  end
-
-  def validate_visible_contact_attributes
-    return if visible_contact_attributes.blank? || contact_id.blank?
-
-    unless visible_contact_attributes.all? { |attr|
-      ALLOWED_VISIBLE_CONTACT_ATTRIBUTES.include?(attr)
-    }
-      errors.add(:visible_contact_attributes, :inclusion)
     end
   end
 
