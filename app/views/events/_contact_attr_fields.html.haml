@@ -6,4 +6,4 @@
 %p.mt-3= t('events.form.explain_contact_attrs')
 
 = field_set_tag nil do
-  = ContactAttrs::ControlBuilder.new(f, entry).render
+  = ContactAttrs::EventControlBuilder.new(f, entry).render

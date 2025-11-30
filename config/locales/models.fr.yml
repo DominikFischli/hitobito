@@ -707,6 +707,11 @@ fr:
         text_message_password: Mot de passe SMS
         text_message_originator: Expéditeur du SMS
 
+      group/contact_attrs:
+        required: Obligatoire
+        optional: Optionnel
+        hidden: Ne pas afficher
+
       event:
         group_ids: Groupes
         groups: Groupes

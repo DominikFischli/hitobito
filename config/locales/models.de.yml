@@ -640,6 +640,11 @@ de:
         text_message_password: SMS Password
         text_message_originator: SMS Absender
 
+      group/contact_attrs:
+        required: Obligatorisch
+        optional: Optional
+        hidden: Nicht anzeigen
+
       event:
         group_ids: Gruppen
         groups: Gruppen

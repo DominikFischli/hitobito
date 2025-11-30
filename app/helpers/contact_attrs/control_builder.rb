@@ -7,15 +7,14 @@ module ContactAttrs
   class ControlBuilder
     include ActionView::Helpers::OutputSafetyHelper
 
-    def initialize(form, event)
+    def initialize(form, entity)
       @f = form
-      @event = event
+      @entity = entity
     end
 
-    def render
-      safe_join([mandatory_contact_attrs,
-        configurable_contact_attrs,
-        possible_contact_associations])
+    def render(include_contact_assoc = true)
+      to_render = include_contact_assoc ? [mandatory_contact_attrs, configurable_contact_attrs, possible_contact_associations] : [mandatory_contact_attrs, configurable_contact_attrs]
+      safe_join to_render
     end
 
     private
@@ -23,10 +22,18 @@ module ContactAttrs
     delegate :t, to: I18n
     delegate :radio_button_tag, :check_box_tag, :hidden_field_tag, to: "f.template"
 
-    attr_reader :f, :event
+    attr_reader :f, :entity
+
+    def entity_class
+      entity.model.class
+    end
+
+    def entity_name
+      /[a-z]*/.match entity_class.name.downcase
+    end
 
     def mandatory_contact_attrs
-      Event.mandatory_contact_attrs.collect do |a|
+      entity_class.mandatory_contact_attrs.collect do |a|
         f.labeled(a, attr_label(a)) do
           radio_buttons(a, true, [:required])
         end
@@ -42,11 +49,11 @@ module ContactAttrs
     end
 
     def non_mandatory_contact_attrs
-      Event.possible_contact_attrs - Event.mandatory_contact_attrs
+      entity_class.possible_contact_attrs - entity_class.mandatory_contact_attrs
     end
 
     def possible_contact_associations
-      Event.possible_contact_associations.collect do |a|
+      entity_class.possible_contact_associations.collect do |a|
         f.labeled(a, attr_label(a)) do
           assoc_checkbox(a)
         end
@@ -79,20 +86,20 @@ module ContactAttrs
     end
 
     def assoc_hidden?(assoc)
-      event.hidden_contact_attrs.include?(assoc.to_s)
+      entity.hidden_contact_attrs.include?(assoc.to_s)
     end
 
     def checked?(attr, option)
       attr = attr.to_s
-      required = event.required_contact_attrs.include?(attr)
-      hidden = event.hidden_contact_attrs.include?(attr)
+      required = entity.required_contact_attrs.include?(attr)
+      hidden = entity.hidden_contact_attrs.include?(attr)
       return required if option == :required
       return hidden if option == :hidden
       !required && !hidden
     end
 
     def for_name(attr)
-      "event[contact_attrs][#{attr}]"
+      "#{entity_name}[contact_attrs][#{attr}]"
     end
 
     def for_label(attr)
@@ -100,7 +107,7 @@ module ContactAttrs
     end
 
     def option_label(option)
-      t("activerecord.attributes.event/contact_attrs.#{option}")
+      t("activerecord.attributes.#{entity_name}/contact_attrs.#{option}")
     end
 
     def attr_label(attr)

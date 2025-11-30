@@ -706,6 +706,11 @@ it:
         text_message_password: Password SMS
         text_message_originator: Mittente SMS
 
+      group/contact_attrs:
+        required: Obbligatorio
+        optional: Facoltativo
+        hidden: Non visualizzare
+
       event:
         group_ids: Gruppi
         groups: Gruppi

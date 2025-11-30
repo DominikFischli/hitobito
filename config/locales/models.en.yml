@@ -638,6 +638,11 @@ en:
         text_message_password: SMS Password
         text_message_originator: SMS Absender
 
+      group/contact_attrs:
+        required: Mandatory
+        optional: Optional
+        hidden: Do not display
+
       event:
         group_ids: Groups
         groups: Groups

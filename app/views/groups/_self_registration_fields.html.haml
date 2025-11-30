@@ -15,3 +15,5 @@
     = f.help_inline(t('groups.form.help_main_self_registration_group'))
 
   = render_extensions :self_registration_fields, f: f
+
+  = ContactAttrs::GroupControlBuilder.new(f, entry).render
