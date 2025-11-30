@@ -3,11 +3,65 @@
 -#  or at https://github.com/hitobito/hitobito.
 
 = c.fields_for do |ff|
-  = ff.labeled_input_fields :first_name, :last_name
-  - if f.object.new_user_form.support_company?
-    = ff.labeled_input_fields :company_name
-    = ff.labeled_boolean_field :company
-  = ff.labeled_input_field :email, help_inline: t('people.email_field.used_as_login'), class: 'd-inline'
+  = field_set_tag do
+    - [:first_name, :last_name, :nickname, :company_name].each do |a|
+      = ff.labeled_input_field(a, { required: group.required_contact_attr?(a) }) if group.show_contact_attr?(a)
+  - if f.object.new_user_form.support_company? and group.show_contact_attr? :company
+    = ff.labeled_input_fields :company_name, { required: group.required_contact_attr?(:company_name) }
+    = ff.labeled_boolean_field :company, { required: group.required_contact_attr?(:company) }
+
+  = ff.labeled_input_field :email, {help_inline: t('people.email_field.used_as_login'), class: 'd-inline', required: true}
+
+  = ff.labeled_input_field(:address_care_of, { required: group.required_contact_attr?(:address_care_of) }) if group.show_contact_attr?(:address_care_of)
+
+  - if group.show_contact_attr_address
+    = ff.labeled(:street, Person.human_attribute_name(:address), class: 'd-flex') do
+      %div.col-9
+        = ff.input_field(:street, data: { provide: 'entity', updater: 'AddressTypeahead.update', url: addresses_query_url }, required: group.required_contact_attr?(:street)) if group.show_contact_attr?(:street)
+      %div.col-2.offset-1
+        = ff.input_field(:housenumber, { required: group.required_contact_attr?(:housenumber) }) if group.show_contact_attr?(:housenumber)
+
+  = ff.labeled_input_field(:postbox, { required: group.required_contact_attr?(:postbox) }) if group.show_contact_attr?(:postbox)
+  = ff.labeled_input_field(:zip_code, { required: group.required_contact_attr?(:zip_code) }) if group.show_contact_attr?(:zip_code)
+  = ff.labeled_input_field(:town, { required: group.required_contact_attr?(:town) }) if group.show_contact_attr?(:town)
+
+  - if group.show_contact_attr?(:country)
+    = ff.labeled(:country) do
+      .shown.ms-0
+        = ff.country_field(:country, required: group.required_contact_attr?(:country))
+
+  -# TODO: Find a solution for the attributes depending on labeled_inline_fields_for
+
+  -# - group.possible_contact_associations.each do |a|
+  -#   = field_set_tag do
+  -#     - unless group.hidden_contact_attrs.map(&:to_sym).include?(a)
+  -#       = ff.labeled_inline_fields_for a, "contactable/#{a.to_s.singularize}_fields"
+
+  -# = field_set_tag do
+  -#   - unless group.hidden_contact_attrs.map(&:to_sym).include?(:phone_numbers)
+  -#     = ff.labeled_inline_fields_for :phone_numbers, "contactable/phone_number_fields",
+  -#                                   nil, group.required_contact_attr?(:phone_numbers)
+
+  = field_set_tag do
+    - if group.show_contact_attr?(:gender)
+      = ff.labeled_radio_buttons(:gender, Person::GENDERS + [''], :person)
+
+    - if group.show_contact_attr?(:birthday)
+      = ff.labeled_string_field(:birthday,
+                              required: group.required_contact_attr?(:birthday),
+                              value: ff.date_value(:birthday),
+                              help_inline: t('people.fields.format_birthday'),
+                              class: 'col-2 d-inline')
+
+  - FeatureGate.if(:person_language) do
+    = ff.labeled_collection_select(:language,
+                                  Person::LANGUAGES,
+                                  :first,
+                                  :last,
+                                  { prompt: true },
+                                  required: group.required_contact_attr?(:birthday),
+                                  class: 'form-select form-select-sm')
+
 
   - if f.object.steps.one?
     = render 'groups/self_registration/adult_consent_field', f: ff

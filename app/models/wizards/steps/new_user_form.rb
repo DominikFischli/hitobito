@@ -5,14 +5,13 @@
 #  or at https://github.com/hitobito/hitobito.
 
 class Wizards::Steps::NewUserForm < Wizards::Step
-  attribute :first_name, :string
-  attribute :last_name, :string
-  attribute :nickname, :string
-  attribute :company_name, :string
   attribute :company, :boolean
-  attribute :email, :string
   attribute :adult_consent, :boolean
   attribute :privacy_policy_accepted, :boolean
+
+  Group.possible_contact_attrs.each do |attr|
+    attribute attr, Person.type_for_attribute(attr).type
+  end
 
   validates :first_name, :last_name, presence: true
   validates :adult_consent, acceptance: true, if: :requires_adult_consent?
@@ -22,14 +21,6 @@ class Wizards::Steps::NewUserForm < Wizards::Step
   delegate :requires_adult_consent?, :requires_policy_acceptance?, to: :wizard
 
   class_attribute :support_company, default: true
-
-  def self.human_attribute_name(attr, options = {})
-    super(attr, default: Person.human_attribute_name(attr, options))
-  end
-
-  def assignable_attributes
-    attributes.compact_blank.symbolize_keys.except(:adult_consent)
-  end
 
   private
 
