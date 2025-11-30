@@ -6,6 +6,7 @@
 #  https://github.com/hitobito/hitobito.
 
 class GroupsController < CrudController
+  include ContactParams
   include AsyncDownload
 
   # Respective group attrs are added in corresponding instance method.
@@ -82,6 +83,12 @@ class GroupsController < CrudController
   end
 
   private
+
+  def assign_attributes
+    assign_contact_attrs
+    assign_visible_contact_attrs
+    super
+  end
 
   def update_main_self_registration_group
     return unless entry.saved_change_to_main_self_registration_group? &&

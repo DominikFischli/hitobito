@@ -33,6 +33,8 @@
 #  self_registration_notification_email    :string
 #  self_registration_require_adult_consent :boolean          default(FALSE), not null
 #  self_registration_role_type             :string
+#  hidden_contact_attrs                    :text
+#  required_contact_attrs                  :text
 #  short_name                              :string(31)
 #  street                                  :string
 #  text_message_originator                 :string
@@ -64,6 +66,7 @@ class Group < ActiveRecord::Base # rubocop:disable Metrics/ClassLength
 
   include Group::NestedSet
   include Group::Types
+  include ContactAttrs
   include Contactable
   include ValidatedEmail
   include Globalized
@@ -77,6 +80,10 @@ class Group < ActiveRecord::Base # rubocop:disable Metrics/ClassLength
 
   serialize :encrypted_text_message_username, coder: YAML
   serialize :encrypted_text_message_password, coder: YAML
+
+  serialize :visible_contact_attributes, type: Array, coder: NilArrayCoder
+  serialize :required_contact_attrs, type: Array, coder: NilArrayCoder
+  serialize :hidden_contact_attrs, type: Array, coder: NilArrayCoder
 
   i18n_enum :letter_address_position, ADDRESS_POSITION_VALUES, scopes: false, queries: false
   attr_encrypted :text_message_username, :text_message_password
@@ -93,6 +100,9 @@ class Group < ActiveRecord::Base # rubocop:disable Metrics/ClassLength
 
   ### ATTRIBUTES
 
+  # Remove non-trivial contact attr. For now, the self-registration only allows for trivial contact attrs
+  self.possible_contact_attrs = possible_contact_attrs - [:phone_numbers]
+
   # All attributes actually used (and mass-assignable) by the respective STI type.
   # This must contain the superior attributes as well.
   class_attribute :used_attributes
@@ -100,7 +110,7 @@ class Group < ActiveRecord::Base # rubocop:disable Metrics/ClassLength
     :name, :short_name, :email, :contact_id, :text_message_username,
     :text_message_password, :text_message_provider, :text_message_originator,
     :letter_address_position, :address_care_of, :street, :housenumber,
-    :postbox, :zip_code, :town, :country, :description
+    :postbox, :zip_code, :town, :country, :description, :required_contact_attrs, :hidden_contact_attrs
   ]
 
   FeatureGate.if("groups.nextcloud") do
